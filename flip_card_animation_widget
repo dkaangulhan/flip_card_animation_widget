@@ -1,0 +1,155 @@
+import 'package:flutter/material.dart';
+
+/*
+Card widget that turns around with animation
+ */
+class FlipCardAnimationWidget extends StatefulWidget {
+  const FlipCardAnimationWidget({
+    Key? key,
+    required this.cardId,
+    this.cardImage,
+    this.cardBacksideImage,
+    this.cardProviderImage,
+  }) : super(key: key);
+
+  final String cardId;
+  //if cardImage is null then gradient will be used for displaying card
+  final Image? cardImage;
+  final Image? cardBacksideImage;
+  final Image? cardProviderImage;
+
+  @override
+  State<FlipCardAnimationWidget> createState() =>
+      _FlipCardAnimationWidgetState();
+}
+
+class _FlipCardAnimationWidgetState extends State<FlipCardAnimationWidget>
+    with SingleTickerProviderStateMixin {
+  double degree = 0.0;
+  late Widget cardForeside;
+  late Widget cardBackside;
+  late AnimationController animationController;
+
+  @override
+  void initState() {
+    animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    animationController.addListener(() {
+      setState(() {
+        degree = 180.0 * animationController.value;
+      });
+    });
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    animationController.dispose();
+    super.dispose();
+  }
+
+  void cardFlipControl() {
+    bool forward = animationController.status == AnimationStatus.forward ||
+        animationController.status == AnimationStatus.completed;
+    if (forward) {
+      animationController.reverse(from: animationController.value);
+    } else {
+      animationController.forward(from: animationController.value);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    cardForeside = Stack(
+      children: [
+        Container(
+          width: MediaQuery.of(context).size.width,
+          height: 300.0,
+          decoration: BoxDecoration(
+            gradient: widget.cardImage == null
+                ? const LinearGradient(
+                    colors: [
+                      Colors.blueAccent,
+                      Colors.redAccent,
+                    ],
+                  )
+                : null,
+          ),
+          child: widget.cardImage ?? const SizedBox(),
+        ),
+        //Card Provider
+        Positioned(
+          left: 18.0,
+          top: 20.0,
+          child: widget.cardProviderImage ??
+              const Text(
+                'CP',
+              ),
+        ),
+        //Card Id
+        Positioned(
+          left: 18.0,
+          bottom: 20.0,
+          child: Text(
+            widget.cardId,
+            style: const TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+    cardBackside = Container(
+      transform: Matrix4.rotationY(
+        degreeToRadian(180.0),
+      ),
+      transformAlignment: Alignment.center,
+      decoration: BoxDecoration(
+        gradient: widget.cardBacksideImage == null
+            ? const LinearGradient(colors: [
+                Colors.blueAccent,
+                Colors.redAccent,
+              ])
+            : null,
+      ),
+      child: widget.cardBacksideImage ?? const SizedBox(),
+    );
+
+    return Column(
+      children: [
+        Container(
+          width: MediaQuery.of(context).size.width,
+          height: 220.0,
+          transform: Matrix4.rotationY(
+            degreeToRadian(
+              degree,
+            ),
+          ),
+          transformAlignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              25.0,
+            ),
+          ),
+          clipBehavior: Clip.hardEdge,
+          child: animationController.value < 0.5 ? cardForeside : cardBackside,
+        ),
+        ElevatedButton(
+          onPressed: cardFlipControl,
+          child: const Text('Flip!'),
+        ),
+      ],
+    );
+  }
+}
+
+
+double degreeToRadian(double degree) {
+  return pi * degree / 180.0;
+}
